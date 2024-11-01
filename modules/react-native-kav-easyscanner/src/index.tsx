@@ -49,7 +49,7 @@ export const kasperskyEasyScanner = (scanType: ScanType): Promise<any> => {
 
   return new Promise((resolve, reject) => {
     let result: EmitterSubscription;
-    result = DeviceEventEmitter.addListener('ScanResult', data => {
+    result = DeviceEventEmitter.addListener('AllResult', data => {
       resolve(data);
       result.remove();
     });

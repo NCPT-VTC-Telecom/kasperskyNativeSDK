@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 
 public class WifiScannerModule extends ReactContextBaseJavaModule implements SdkInitListener {
@@ -88,9 +89,7 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
         try {
           initializeSdk(context, WifiScannerModule.this);
           onSdkInitialized();
-        } catch (SdkLicenseViolationException e) {
-          throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (SdkLicenseViolationException | IOException e) {
           throw new RuntimeException(e);
         }
       }
@@ -103,11 +102,11 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
   public void initializeSdk(Context context, SdkInitListener listener) throws SdkLicenseViolationException, IOException {
 
 
-    final File basesPath = getCurrentActivity().getApplicationContext().getDir("bases", Context.MODE_PRIVATE);
-    ServiceStateStorage generalStorage = new DataStorage(getCurrentActivity().getApplicationContext(), DataStorage.GENERAL_SETTINGS_STORAGE);
+    final File basesPath = context.getDir("bases", Context.MODE_PRIVATE);
+    ServiceStateStorage generalStorage = new DataStorage(context, DataStorage.GENERAL_SETTINGS_STORAGE);
 
     try {
-      KavSdk.initSafe(getCurrentActivity().getApplicationContext(), basesPath, generalStorage, getNativeLibsPath());
+      KavSdk.initSafe(context, basesPath, generalStorage, getNativeLibsPath());
 
       final SdkLicense license = KavSdk.getLicense();
       if (!license.isValid()) {
@@ -135,24 +134,21 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
 
     mAntivirusComponent = AntivirusInstance.getInstance();
 
-    File scanTmpDir = getCurrentActivity().getApplicationContext().getDir("scan_tmp", Context.MODE_PRIVATE);
-    File monitorTmpDir = getCurrentActivity().getApplicationContext().getDir("monitor_tmp", Context.MODE_PRIVATE);
+    File scanTmpDir = context.getDir("scan_tmp", Context.MODE_PRIVATE);
+    File monitorTmpDir = context.getDir("monitor_tmp", Context.MODE_PRIVATE);
 
     try {
-      mAntivirusComponent.initAntivirus(getCurrentActivity().getApplicationContext(),
-              scanTmpDir.getAbsolutePath(), monitorTmpDir.getAbsolutePath());
+      mAntivirusComponent.initAntivirus(context,
+              scanTmpDir.getAbsolutePath(),
+              monitorTmpDir.getAbsolutePath());
 
-    } catch (SdkLicenseViolationException e) {
+    } catch (SdkLicenseViolationException | IOException e) {
       mSdkInitStatus = InitStatus.InitFailed;
       listener.onInitializationFailed(e.getMessage());
       return;
-    } catch (IOException ioe) {
-      mSdkInitStatus = InitStatus.InitFailed;
-      listener.onInitializationFailed(ioe.getMessage());
-      return;
     }
 
-    mSdkInitStatus = InitStatus.InitedSuccesfully;
+      mSdkInitStatus = InitStatus.InitedSuccesfully;
     listener.onSdkInitialized();
   }
 
@@ -162,16 +158,14 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
   }
 
 
-
-
   @ReactMethod
     public boolean onSdkInitialized () {
       boolean isNetworkSafe = false;
-
+      Context context = Objects.requireNonNull(getCurrentActivity()).getApplicationContext();
       WifiManager wifiManager = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
       WifiInfo wi = wifiManager.getConnectionInfo();
       if (wi != null) {
-          if (ActivityCompat.checkSelfPermission(getCurrentActivity().getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+          if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
               // TODO: Consider calling
               //    ActivityCompat#requestPermissions
               // here to request the missing permissions, and then overriding
@@ -186,16 +180,16 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
             Log.w(TAG, "We're connected to " + scanResult.SSID);
             Object wifiSecurity = getScanResultSecurity(scanResult);
             Log.w(TAG, "Encryption is " + wifiSecurity);
-//                    if (wifiSecurity.equals(WifiSecurityAuthMode.OPEN)) {
-//                        return false;
-//                    }
+//                if (wifiSecurity.equals(WifiSecurityAuthMode.OPEN)) {
+//                  return false;
+//                }
 
             break;
           }
         }
 
         try {
-          final WifiReputation wifiReputation = new WifiReputation(mContext.getApplicationContext());
+          final WifiReputation wifiReputation = new WifiReputation(context);
           WifiCheckResult wifiCheckResult = wifiReputation.checkCurrentNetwork();
           Log.i(TAG, "Wifi Safe Status: " + wifiReputation.isCurrentNetworkSafe() + " " + wifiCheckResult.getBssid());
           Log.i(TAG, "KSN Wifi check result: " + wifiCheckResult.getVerdict().name());

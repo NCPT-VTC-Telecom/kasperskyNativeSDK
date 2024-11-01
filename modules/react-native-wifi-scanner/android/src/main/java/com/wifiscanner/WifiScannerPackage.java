@@ -1,5 +1,7 @@
 package com.wifiscanner;
 
+import androidx.annotation.NonNull;
+
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;
 import com.facebook.react.bridge.NativeModule;
@@ -13,6 +15,7 @@ import java.util.List;
 
 public class WifiScannerPackage implements ReactPackage {
 
+  @NonNull
   public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
     List<NativeModule> modules = new ArrayList<>();
 

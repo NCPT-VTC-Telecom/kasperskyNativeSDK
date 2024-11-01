@@ -53,6 +53,7 @@ import com.kavsdk.updater.Updater;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -200,12 +201,13 @@ public class ScannerModule extends ReactContextBaseJavaModule implements SdkInit
 
 
     @ReactMethod
-    public void getPermissionClick(View view) {
+    public void getPermissionClick() {
+        Context context = getCurrentActivity().getApplicationContext();
         hasAccessToAllFiles = getFileAccessStatus();
         if (!hasAccessToAllFiles && SDK_INT == 29) {
             Log.i(TAG, "Requesting RW to Storage. API 29");
             ActivityCompat.requestPermissions(
-                    (Activity) getCurrentActivity().getApplicationContext(),
+                    (Activity) context,
                     PERMISSIONS_STORAGE,
                     ALL_FILES_PERMISSION_REQ_CODE
 
@@ -233,6 +235,9 @@ public class ScannerModule extends ReactContextBaseJavaModule implements SdkInit
     }
 
     private void startActivityForResult(Intent intent, int allFilesPermissionReqCode) {
+    }
+
+    private void startActivityForResult() {
     }
 
 
@@ -358,7 +363,7 @@ public class ScannerModule extends ReactContextBaseJavaModule implements SdkInit
 
     // Method to send log messages to JS via event emitter
     private void sendEvent(ReactContext reactContext, String eventName, @Nullable String message) {
-        List<String> messageList = Arrays.asList(message);
+        List<String> messageList = Collections.singletonList(message);
         reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, message);
     }

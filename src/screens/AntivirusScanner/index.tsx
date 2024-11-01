@@ -135,7 +135,7 @@ const AntivirusChecker: React.FC<StackScreenProps<any>> = ({navigation}) => {
       setError(false);
       setIsLoading(true);
       const result = await kasperskyEasyScanner(scanType);
-      console.log(result);
+
       setIsResult(result);
       renderResult(result);
       setIsLoading(false);
@@ -146,7 +146,9 @@ const AntivirusChecker: React.FC<StackScreenProps<any>> = ({navigation}) => {
     }
   };
   const renderResult = (result: any) => {
-    Alert.alert('Kết quả', result);
+
+    if (isResult) {  Alert.alert('Kết quả', result); }
+  
   };
 
   const onSelectScanType = (value: string) => setScanType(value as ScanType);
@@ -182,7 +184,7 @@ const AntivirusChecker: React.FC<StackScreenProps<any>> = ({navigation}) => {
           }}>
           Hãy chọn một trong những cách quét thiết bị dưới đây và bắt đầu
         </Text>
-      ) : (
+      ) : !isResult && isLoading ?(
         <View
           style={{
             flexDirection: 'row',
@@ -195,7 +197,11 @@ const AntivirusChecker: React.FC<StackScreenProps<any>> = ({navigation}) => {
             Đang quét...
           </Text>
         </View>
-      )}
+      ) : 
+        <View>
+          <Text>{isResult}</Text>
+        </View>
+      }
       <View style={{flexDirection: 'row', gap: 8, marginVertical: 8}}>
         <TouchableOpacity
           style={styles.updateSelection}
@@ -318,14 +324,7 @@ const AntivirusChecker: React.FC<StackScreenProps<any>> = ({navigation}) => {
             </Text>
           </View>
         </TouchableOpacity>
-        {/* <BottomSheet
-          ref={bottomSheetRef}
-          onChange={handleSheetChanges}
-          snapPoints={['30%', '50%']}>
-          <BottomSheetView style={styles.contentContainer}>
-            <Text>Awesome 🎉</Text>
-          </BottomSheetView>
-        </BottomSheet> */}
+
       </View>
     </ScrollView>
   );
