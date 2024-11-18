@@ -88,7 +88,7 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
         final Context context = getReactApplicationContext().getApplicationContext();
         try {
           initializeSdk(context, WifiScannerModule.this);
-          onSdkInitialized();
+
         } catch (SdkLicenseViolationException | IOException e) {
           throw new RuntimeException(e);
         }
@@ -149,7 +149,7 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
     }
 
       mSdkInitStatus = InitStatus.InitedSuccesfully;
-    listener.onSdkInitialized();
+
   }
 
 

@@ -1,4 +1,4 @@
-package com.kasperskysdk
+package com.kasperskysvtc
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
