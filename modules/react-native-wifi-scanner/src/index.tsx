@@ -22,18 +22,34 @@ const WifiScanner = NativeModules.WifiScanner
       },
     );
 
-export const kasperskyWifiScanner = (): Promise<any> => {
+export const iniitializeSdk = (): Promise<any> => {
   const {KasperskyWifiScanner} = NativeModules;
   return new Promise((resolve, reject) => {
     let result: EmitterSubscription;
-    result = DeviceEventEmitter.addListener('WifiScanResult', data => {
+    result = DeviceEventEmitter.addListener('Status', data => {
       resolve(data);
-      console.log(data);
       result.remove();
     });
 
     try {
       KasperskyWifiScanner.onCreate();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+export const wifiScanning = (): Promise<any> => {
+  const {KasperskyWifiScanner} = NativeModules;
+  return new Promise((resolve, reject) => {
+    let result: EmitterSubscription;
+    result = DeviceEventEmitter.addListener('Status', data => {
+      resolve(data);
+      result.remove();
+    });
+
+    try {
+      KasperskyWifiScanner.onSdkInitialized();
     } catch (error) {
       reject(error);
     }

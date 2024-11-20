@@ -35,6 +35,7 @@ import com.kavsdk.license.SdkLicenseNetworkException;
 import com.kavsdk.license.SdkLicenseViolationException;
 
 import com.kavsdk.shared.iface.ServiceStateStorage;
+import com.kavsdk.updater.Updater;
 import com.kavsdk.webfilter.WebFilterControl;
 import com.kavsdk.wifi.WifiCheckResult;
 import com.kavsdk.wifi.WifiReputation;
@@ -88,7 +89,6 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
         final Context context = getReactApplicationContext().getApplicationContext();
         try {
           initializeSdk(context, WifiScannerModule.this);
-
         } catch (SdkLicenseViolationException | IOException e) {
           throw new RuntimeException(e);
         }
@@ -149,7 +149,8 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
     }
 
       mSdkInitStatus = InitStatus.InitedSuccesfully;
-
+      Log.d(TAG, "Result" + mSdkInitStatus);
+      sendEvent(getReactApplicationContext(), "Status", String.valueOf(mSdkInitStatus));
   }
 
 
@@ -161,32 +162,18 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
   @ReactMethod
     public boolean onSdkInitialized () {
       boolean isNetworkSafe = false;
-      Context context = Objects.requireNonNull(getCurrentActivity()).getApplicationContext();
-      WifiManager wifiManager = (WifiManager) mContext.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+      Context context = getCurrentActivity().getApplicationContext();
+      ReactContext reactContext = getReactApplicationContext();
+      Updater updater = Updater.getInstance(); //
+      try {
+        sendEvent(reactContext, "updateDatabase", "Đang cập nhật Database");
+        updater.updateAntivirusBases((i, i1) -> false);
+        Log.i("TAG", "WEB_FILTER_STARTED");
+      } catch (SdkLicenseViolationException e) {
+        throw new RuntimeException(e);
+      }
+      WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
       WifiInfo wi = wifiManager.getConnectionInfo();
-      if (wi != null) {
-          if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-              // TODO: Consider calling
-              //    ActivityCompat#requestPermissions
-              // here to request the missing permissions, and then overriding
-              //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-              //                                          int[] grantResults)
-              // to handle the case where the user grants the permission. See the documentation
-              // for ActivityCompat#requestPermissions for more details.
-            return isNetworkSafe;
-          }
-          for (ScanResult scanResult : wifiManager.getScanResults()) {
-          if (wi.getSSID().contains(scanResult.SSID)) {
-            Log.w(TAG, "We're connected to " + scanResult.SSID);
-            Object wifiSecurity = getScanResultSecurity(scanResult);
-            Log.w(TAG, "Encryption is " + wifiSecurity);
-//                if (wifiSecurity.equals(WifiSecurityAuthMode.OPEN)) {
-//                  return false;
-//                }
-
-            break;
-          }
-        }
 
         try {
           final WifiReputation wifiReputation = new WifiReputation(context);
@@ -194,6 +181,7 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
           Log.i(TAG, "Wifi Safe Status: " + wifiReputation.isCurrentNetworkSafe() + " " + wifiCheckResult.getBssid());
           Log.i(TAG, "KSN Wifi check result: " + wifiCheckResult.getVerdict().name());
           isNetworkSafe = wifiReputation.isCurrentNetworkSafe();
+          Log.d(TAG, "Is network safe:" + isNetworkSafe);
           if (mExtListener != null) {
             mExtListener.onEvent(TAG, "Wifi Safe Status: " + wifiReputation.isCurrentNetworkSafe());
             mExtListener.onEvent(TAG, "BSSID: " + wifiCheckResult.getBssid());
@@ -202,7 +190,7 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
         } catch (SdkLicenseViolationException | IOException e) {
           e.printStackTrace();
         }
-      }
+
 
     return isNetworkSafe;
   }

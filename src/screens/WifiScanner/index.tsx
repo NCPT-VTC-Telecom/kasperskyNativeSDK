@@ -2,26 +2,50 @@
 import React from 'react';
 import {DeviceEventEmitter, Image, TouchableOpacity} from 'react-native';
 import {StyleSheet, Text, View} from 'react-native';
-import kasperskyAppMonitor from 'react-native-app-monitor';
+
+import Loading from './components/Loading';
+
 import {Switch, Button, Divider} from 'react-native-paper';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {images} from '../../assets';
 import {useAppNavigation} from '../../navigation/AppNavigation';
-import {kasperskyWifiScanner} from 'react-native-wifi-scanner';
+import {iniitializeSdk, wifiScanning} from 'react-native-wifi-scanner';
 
 const WifiScanner: React.FC<any> = () => {
   const navigation = useAppNavigation();
   const styles = createStyles();
+  const [loading, setLoading] = React.useState<boolean>(false);
 
-  const onFunction = async () => {
+  const [result, setResult] = React.useState<any>('');
+
+  React.useEffect(() => {
+    initializingSdk();
+  }, []);
+
+  const initializingSdk = async () => {
     try {
-      await kasperskyWifiScanner();
+      setLoading(true);
+      const result = await iniitializeSdk();
+      setResult(result);
+      setLoading(false);
     } catch (error) {
       console.error(error);
     }
   };
 
+  const onScan = async () => {
+    try {
+      setLoading(true);
+      const result = await wifiScanning();
+      setResult(result);
+      setLoading(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  if (loading) return <Loading />;
   return (
     <View style={{padding: 8}}>
       <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -42,7 +66,13 @@ const WifiScanner: React.FC<any> = () => {
         <Text style={styles.description}>
           Sử dụng Wifi an toàn cùng với Kaspersky
         </Text>
-        <Button onPress={onFunction} style={styles.button}>
+        <Text style={styles.description}>
+          Đảm bảo tất cả những thiết bị kết nối vào mạng Wifi của bạn đều an
+          toàn. Hãy nhấn vào nút bên dưới để bắt đầu quét mạng lưới Wifi kết nối
+          của bạn. Và từ đó bạn sẽ được thông báo về những thiết bị nào đang kết
+          nối vào mạng Wifi của bạn.
+        </Text>
+        <Button onPress={onScan} style={styles.button}>
           <Text style={{color: 'white'}}>Nhấn để quét</Text>
         </Button>
       </View>
