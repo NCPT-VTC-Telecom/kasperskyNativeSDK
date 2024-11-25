@@ -5,6 +5,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -33,13 +35,13 @@ import com.webmodules.UrlFilterImpl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Objects;
 
 
 class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListener {
 
     private static final String TAG = "WEB_FILTER_EXAMPLE";
     private volatile WebFilterModule.InitStatus mSdkInitStatus = WebFilterModule.InitStatus.NotInited;
-    private Antivirus mAntivirusComponent;
     private Thread mThread;
     private Context mContext;
     private static final int WEB_FILTER_FLAGS = 0x0;
@@ -51,6 +53,7 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
         super(reactContext);
     }
 
+    @NonNull
     public String getName() {
         return "KasperskyWebFilter";
     }
@@ -58,15 +61,15 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
     /** Setting the update */
     @ReactMethod
     public void updateDatabase () {
-        final Context context = getReactApplicationContext().getApplicationContext();
-        initializeSdk(context, WebFilterModule.this);
+        final Context updateContext = getReactApplicationContext().getApplicationContext();
+        initializeSdk(updateContext, WebFilterModule.this);
         Updater updater = Updater.getInstance(); //
         try {
             updater.updateAntivirusBases((i, i1) -> false);
             Log.i("TAG", "WEB_FILTER_STARTED");
-            sendStringEvent(getReactApplicationContext(), "Status", "Cập nhật database thành công");
+            sendStringEvent(getReactApplicationContext(), "Status", "Completed");
         } catch (SdkLicenseViolationException e) {
-            sendStringEvent(getReactApplicationContext(), "Status", "Cập nhật database thất bại" + e);
+            sendStringEvent(getReactApplicationContext(), "Status", "Failed");
             throw new RuntimeException(e);
         }
 
@@ -74,24 +77,21 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
 
     /** Update and initialize the SDK */
     @ReactMethod
-    public void onCreate(Context context) {
+    public void onCreate() {
         super.initialize();
+        final Context context = Objects.requireNonNull(getCurrentActivity()).getApplicationContext();
         Log.i(TAG, "Sample application started");
-        new Thread(new Runnable() {
-            public void run() {
-                mContext = mContext.getApplicationContext();
-                initializeSdk(mContext, WebFilterModule.this);
-            }}).start();
+        new Thread(() -> initializeSdk(context, WebFilterModule.this)).start();
     }
 
     /** Check for product keys, listener, */
     private void initializeSdk(Context context, SdkInitListener listener)
     {
         final File basesPath = getCurrentActivity().getDir("bases", Context.MODE_PRIVATE);
-        ServiceStateStorage generalStorage  = new DataStorage(getCurrentActivity().getApplicationContext(), DataStorage.GENERAL_SETTINGS_STORAGE);
+        ServiceStateStorage generalStorage  = new DataStorage(context, DataStorage.GENERAL_SETTINGS_STORAGE);
 
         try {
-            KavSdk.initSafe(getCurrentActivity().getApplicationContext(), basesPath, generalStorage, getNativeLibsPath());
+            KavSdk.initSafe(context, basesPath, generalStorage, getNativeLibsPath());
 
             final SdkLicense license = KavSdk.getLicense();
             if (!license.isValid()) {
@@ -116,24 +116,20 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
             listener.onInitializationFailed("New license code is required");
             return;
         }
-        mAntivirusComponent = AntivirusInstance.getInstance();
+        Antivirus mAntivirusComponent = AntivirusInstance.getInstance();
         File scanTmpDir = getCurrentActivity().getDir("scan_tmp", Context.MODE_PRIVATE);
         File monitorTmpDir = getCurrentActivity().getDir("monitor_tmp", Context.MODE_PRIVATE);
 
         try {
-            mAntivirusComponent.initAntivirus(getCurrentActivity().getApplicationContext(), scanTmpDir.getAbsolutePath(), monitorTmpDir.getAbsolutePath());
-        } catch (SdkLicenseViolationException e) {
+            mAntivirusComponent.initAntivirus(context, scanTmpDir.getAbsolutePath(), monitorTmpDir.getAbsolutePath());
+        } catch (SdkLicenseViolationException | IOException e) {
             mSdkInitStatus = InitStatus.InitFailed;
             listener.onInitializationFailed(e.getMessage());
-            return;
-        } catch (IOException ioe) {
-            mSdkInitStatus = InitStatus.InitFailed;
-            listener.onInitializationFailed(ioe.getMessage());
             return;
         }
 
         mSdkInitStatus = InitStatus.InitedSuccesfully;
-        listener.onSdkInitialized();
+        sendEvent(getReactApplicationContext(), "Initialize Status", Boolean.parseBoolean(String.valueOf(mSdkInitStatus)));
     }
 
     public void onInitializationFailed(String reason) {
@@ -146,19 +142,17 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
         if (mWebFilter == null) {
             WebFilterControlFactory factory = new WebFilterControlFactoryImpl();
             try {
-                mWebFilter = factory.create((WebAccessHandler) (new UrlFilterImpl()), getCurrentActivity().getApplicationContext());
+                mWebFilter = factory.create((WebAccessHandler) (new UrlFilterImpl()), mContext);
             } catch (SdkLicenseViolationException e) {
                 e.printStackTrace();
             }
 
-            // Deny next categories to access
-            mWebFilter.setCategoriesEnabled(new UrlCategory[] {UrlCategory.SocialNet, UrlCategory.Malware, UrlCategory.Phishing});
-
-
+            mWebFilter.setCategoriesEnabled(new UrlCategory[] {
+                    UrlCategory.SocialNet,
+                    UrlCategory.Malware,
+                    UrlCategory.Phishing});
             mWebFilter.enable(true);
             Log.i(TAG, "In startWebFilter. Finish ALl OK");
-
-
         }
     }
 
@@ -184,8 +178,9 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
         // Note: storing the libraries outside the application data directory is not secure as
         // the libraries can be replaced. In this case, the libraries correctness checking is required.
         // Besides, the specified path must be to device specific libraries, i.e. you should care about device architecture.
+        final Context context = Objects.requireNonNull(getCurrentActivity()).getApplicationContext();
         try {
-            PackageInfo packageInfo = getCurrentActivity().getPackageManager().getPackageInfo(getCurrentActivity().getPackageName(), 0);
+            PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
             return packageInfo.applicationInfo.nativeLibraryDir;
 
         } catch (PackageManager.NameNotFoundException e) {

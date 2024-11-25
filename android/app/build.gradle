@@ -89,12 +89,12 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        release {
-            storeFile file("C:\\Users\\anduy\\kaspersky-mobile-vtc.jks")
-            storePassword "vtc123"
-            keyAlias "keystore-app"
-            keyPassword "vtc123"
-        }
+//        release {
+//            storeFile file("C:\\Users\\anduy\\kaspersky-mobile-vtc.jks")
+//            storePassword "vtc123"
+//            keyAlias "keystore-app"
+//            keyPassword "vtc123"
+//        }
     }
     buildTypes {
         debug {

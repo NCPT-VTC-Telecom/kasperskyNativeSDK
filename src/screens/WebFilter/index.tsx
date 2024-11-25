@@ -4,6 +4,7 @@ import React from 'react';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {images} from '../../assets';
 import {Button, Divider} from 'react-native-paper';
+import {ToastAndroid} from 'react-native';
 
 import {useAppNavigation} from '../../navigation/AppNavigation';
 
@@ -13,11 +14,15 @@ import colors from '../../themes/colors/colors';
 const WebFilter: React.FC = () => {
   const styles = createStyles();
   const navigation = useAppNavigation();
+  const [databaseLoading, setDatabaseLoading] = React.useState(false);
 
   /** This function will update the database of the Anti-virus */
   const onUpdateDatabase = async () => {
     try {
+      setDatabaseLoading(true);
       const resp = await updateDatabase();
+      setDatabaseLoading(false);
+      ToastAndroid.show('Cập nhật CSDL thành công', ToastAndroid.SHORT);
       console.log(resp);
     } catch (error) {
       console.log(error);
@@ -50,12 +55,27 @@ const WebFilter: React.FC = () => {
         thông tin từ các trang web đáng tin cậy.
       </Text>
       <Divider style={{borderWidth: 0.25, marginVertical: 8}} />
-
-      <Button
-        onPress={onPress}
-        style={{backgroundColor: colors.dark.secondary1}}>
-        <Text style={{color: 'white', fontWeight: '700'}}>Lọc website</Text>
-      </Button>
+      <View style={styles.buttonContainer}>
+        <Button
+          onPress={onUpdateDatabase}
+          style={{
+            backgroundColor: colors.dark.primary,
+            flex: 1,
+            borderRadius: 8,
+          }}
+          loading={databaseLoading}>
+          <Text style={{color: 'white', fontWeight: '700'}}>Cập nhật CSDL</Text>
+        </Button>
+        <Button
+          onPress={onPress}
+          style={{
+            backgroundColor: colors.dark.primary1,
+            flex: 1,
+            borderRadius: 8,
+          }}>
+          <Text style={{color: 'white', fontWeight: '700'}}>Lọc website</Text>
+        </Button>
+      </View>
     </View>
   );
 };
@@ -72,5 +92,6 @@ const createStyles = () => {
       marginVertical: 8,
     },
     description: {color: '#1D1D1B', lineHeight: 23},
+    buttonContainer: {flexDirection: 'row', gap: 8},
   });
 };
