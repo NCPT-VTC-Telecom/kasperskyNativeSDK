@@ -168,7 +168,7 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
       try {
         sendEvent(reactContext, "updateDatabase", "Đang cập nhật Database");
         updater.updateAntivirusBases((i, i1) -> false);
-        Log.i("TAG", "WEB_FILTER_STARTED");
+        Log.i("TAG", "WIFI_SCANNER_STARTED");
       } catch (SdkLicenseViolationException e) {
         throw new RuntimeException(e);
       }

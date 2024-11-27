@@ -27,6 +27,7 @@
     "react-native-app-monitor": "file:./modules\\react-native-app-monitor",
     "react-native-fast-image": "^8.6.3",
     "react-native-fs": "^2.20.0",
+    "react-native-geolocation-service": "^5.3.1",
     "react-native-gesture-handler": "^2.19.0",
     "react-native-kav-easyscanner": "file:./modules\\react-native-kav-easyscanner",
     "react-native-linear-gradient": "^2.8.3",

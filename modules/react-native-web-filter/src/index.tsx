@@ -35,7 +35,7 @@ export const activateFilter = (): Promise<any> => {
     });
 
     try {
-      KasperskyWebFilter.onCreate();
+      KasperskyWebFilter.onSdkInitialized();
     } catch (error) {
       reject(error);
     }

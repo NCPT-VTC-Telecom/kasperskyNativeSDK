@@ -8,6 +8,7 @@ import {Switch, Button, Divider} from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {images} from '../../assets';
 import {useAppNavigation} from '../../navigation/AppNavigation';
+import colors from '../../themes/colors/colors';
 
 const AppMonitor: React.FC<any> = () => {
   const navigation = useAppNavigation();
@@ -59,7 +60,7 @@ const AppMonitor: React.FC<any> = () => {
         style={{height: 200, width: '100%'}}
       />
       <View style={{marginHorizontal: 8}}>
-        <Text style={styles.title}>Kiểm soát thiết bị</Text>
+        <Text style={styles.title}>Theo dõi ứng dụng</Text>
         <Text style={styles.description}>
           Để đảm bảo an toàn giữa các ứng dụng, bạn có thể sử dụng chức năng này
           để kiểm soát ứng dụng trên thiết bị của mình. Cho phép Kaspersky quét
@@ -77,31 +78,21 @@ const AppMonitor: React.FC<any> = () => {
             <Text style={{fontSize: 15, fontWeight: 'bold', color: '#1D1D1B'}}>
               Bỏ qua ứng dụng mã độc
             </Text>
-            <Text style={{fontSize: 12, color: '#1D1D1B'}}>
-              Cho phép bỏ qua tất cả những ứng dụng có mã độc trong máy của bạn'
+            <Text style={{fontSize: 12, color: 'red'}}>
+              Lưu ý: "Việc bỏ qua ứng dụng mã độc sẽ không đảm bảo an toàn cho
+              thiết bị của bạn trong quá trình sử dụng"
             </Text>
           </View>
           <Switch
             value={skipRiskwareAdWare}
             onChange={onEnableSkipRiskwareAdware}
-            color="#00A88E"
+            color={colors.dark.primary}
           />
         </View>
-        <View style={styles.view}>
-          <View style={{flex: 1}}>
-            <Text style={{fontSize: 15, fontWeight: 'bold', color: '#1D1D1B'}}>
-              Quét UDS
-            </Text>
-            <Text style={{fontSize: 12, color: '#1D1D1B'}}>
-              Cho phép bỏ qua tất cả những ứng dụng có mã độc trong máy của bạn
-            </Text>
-          </View>
-          <Switch value={scanUds} onChange={onEnableScanUds} color="#00A88E" />
-        </View>
-        <Button onPress={onFunction} style={styles.button}>
-          Nhấn để theo dõi
-        </Button>
       </View>
+      <Button onPress={onFunction} style={styles.button}>
+        <Text style={{color: 'white'}}>Nhấn để theo dõi</Text>
+      </Button>
     </View>
   );
 };
@@ -110,12 +101,18 @@ export default AppMonitor;
 
 const createStyles = () => {
   return StyleSheet.create({
-    title: {color: '#1D1D1B', fontWeight: '700', fontSize: 30},
+    title: {
+      color: '#1D1D1B',
+      fontWeight: '700',
+      fontSize: 30,
+      textAlign: 'center',
+    },
     description: {
       color: '#1D1D1B',
       lineHeight: 20,
-      fontSize: 15,
+      fontSize: 13,
       marginVertical: 8,
+      textAlign: 'center',
     },
     subtitle: {
       fontSize: 25,
@@ -124,6 +121,10 @@ const createStyles = () => {
       color: '#1D1D1B',
     },
     view: {flexDirection: 'row', alignItems: 'center'},
-    button: {backgroundColor: '#29CCB1', borderRadius: 8, marginVertical: 8},
+    button: {
+      backgroundColor: colors.dark.primary,
+      borderRadius: 8,
+      marginVertical: 8,
+    },
   });
 };

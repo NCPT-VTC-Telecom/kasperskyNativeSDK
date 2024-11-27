@@ -135,25 +135,47 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
     public void onInitializationFailed(String reason) {
 
     }
-
+    @ReactMethod
     public void onSdkInitialized() {
-
+        Context context = getCurrentActivity().getApplicationContext();
         Log.i(TAG, "In startWebFilterWithAllAccess");
-        if (mWebFilter == null) {
-            WebFilterControlFactory factory = new WebFilterControlFactoryImpl();
-            try {
-                mWebFilter = factory.create((WebAccessHandler) (new UrlFilterImpl()), mContext);
-            } catch (SdkLicenseViolationException e) {
-                e.printStackTrace();
-            }
+        int flags = WEB_FILTER_FLAGS;
+        // no wifi-proxy in mini-example
+        flags &= ~WebFilterControl.DISABLE_PROXY;
+        int webFilterPort = 8082;
 
-            mWebFilter.setCategoriesEnabled(new UrlCategory[] {
-                    UrlCategory.SocialNet,
-                    UrlCategory.Malware,
-                    UrlCategory.Phishing});
-            mWebFilter.enable(true);
-            Log.i(TAG, "In startWebFilter. Finish ALl OK");
+        WebFilterControl webFilterControl = null;
+        WebFilterControlFactory factory = new WebFilterControlFactoryImpl();
+        try {
+            webFilterControl = factory.create((WebAccessHandler) (new UrlFilterImpl()), context);
+        } catch (SdkLicenseViolationException e) {
+            e.printStackTrace();
         }
+
+        assert webFilterControl != null;
+        webFilterControl.setCategoriesEnabled(new UrlCategory[] {
+                UrlCategory.SocialNet,
+                UrlCategory.Malware,
+                UrlCategory.Phishing});
+        webFilterControl.enable(true);
+        Log.i(TAG, "In startWebFilter. Finish ALl OK");
+        Log.i(TAG, "This status is: " + webFilterControl);
+
+        mWebFilter = webFilterControl;
+
+        mThread = new Thread() {
+            @Override
+            public void run() {
+
+                Log.i(TAG, "WebFilter init complete");
+
+                if (mOpCompletedListener != null) {
+                    mOpCompletedListener.onAvCompleted("Now open Google Chrome:\n\nSocial networks must be blocked,\nporn sites must be blocked,\nany malware URLs must be blocked\nany other sites are not affected");
+                }
+                Log.i(TAG, "WebFilter finished");
+            }
+        };
+        mThread.start();
     }
 
     private enum InitStatus {

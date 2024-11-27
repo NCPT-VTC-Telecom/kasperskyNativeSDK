@@ -15,6 +15,7 @@ const WebFilter: React.FC = () => {
   const styles = createStyles();
   const navigation = useAppNavigation();
   const [databaseLoading, setDatabaseLoading] = React.useState(false);
+  const [onFilterLoading, setOnFilterLoading] = React.useState(false);
 
   /** This function will update the database of the Anti-virus */
   const onUpdateDatabase = async () => {
@@ -31,7 +32,10 @@ const WebFilter: React.FC = () => {
 
   const onPress = async () => {
     try {
+      setOnFilterLoading(true);
       const resp = await activateFilter();
+      setOnFilterLoading(false);
+      ToastAndroid.show('Lọc website thành công', ToastAndroid.SHORT);
     } catch (error) {
       console.log(error);
     }
