@@ -72,7 +72,6 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
             sendStringEvent(getReactApplicationContext(), "Status", "Failed");
             throw new RuntimeException(e);
         }
-
     }
 
     /** Update and initialize the SDK */

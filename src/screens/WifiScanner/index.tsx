@@ -37,9 +37,11 @@ const WifiScanner: React.FC<any> = () => {
     code: 0,
     message: '',
   });
-  const [currentLocation, setCurrentLocation] = React.useState<GeoPosition>({});
+  const [currentLocation, setCurrentLocation] = React.useState<GeoPosition>();
 
   const [result, setResult] = React.useState<any>('');
+
+  const [error, setError] = React.useState<string>();
 
   Geolocation.getCurrentPosition(
     position => {
@@ -95,7 +97,11 @@ const WifiScanner: React.FC<any> = () => {
           [
             {
               text: 'Hủy',
-              onPress: () => {},
+              onPress: () => {
+                setError(
+                  'Bạn cần phải cho phép quyền truy cập địa điểm để Kaspersky có thể thực hiện',
+                );
+              },
               style: 'destructive',
             },
             {
@@ -179,6 +185,9 @@ const WifiScanner: React.FC<any> = () => {
             <Text>Cập nhật dữ liệu thành công</Text>
           </View>
         )}
+      </View>
+      <View style={{flex: 1, alignItems: 'center', justifyContent: 'flex-end'}}>
+        {error && <Text style={{textAlign: 'center'}}>{error}</Text>}
       </View>
     </FadeInView>
   );
