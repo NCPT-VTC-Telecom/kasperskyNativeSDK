@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 
 import com.appmonitor.monitor.AvStatusListener;
 import com.appmonitor.monitor.DataStorage;
+import com.appmonitor.monitor.SdkEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -29,6 +30,7 @@ import com.kavsdk.license.SdkLicenseException;
 import com.kavsdk.license.SdkLicenseNetworkException;
 import com.kavsdk.license.SdkLicenseViolationException;
 import com.kavsdk.shared.iface.ServiceStateStorage;
+import com.kavsdk.updater.Updater;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,26 +52,28 @@ public class AppMonitorModule extends ReactContextBaseJavaModule implements AvSt
   private volatile String mReport;
 
   private Antivirus mAntivirusComponent;
+  private SdkEventListener mExtListener;
   private AppInstallationMonitor mAppInstallationMonitor;
 
   private volatile AvStatusListener mAvStatusListener;
   AppMonitorModule(ReactApplicationContext reactApplicationContext) {super(reactApplicationContext);}
 
   @ReactMethod
-  public void onCreate(Boolean setScanUdsAllow, Boolean setSkipRiskwareAdWare, int maxAppSize, String activationKey) {
+  public void onCreate() {
 
     Log.i(TAG, "Sample application started");
-    System.out.println("Thread" + setScanUdsAllow + setSkipRiskwareAdWare + maxAppSize);
     new Thread(() -> {
         try {
-            initializeSdk(setScanUdsAllow, setSkipRiskwareAdWare, maxAppSize, activationKey);
+            initializeSdk();
         } catch (SdkLicenseException e) {
             throw new RuntimeException(e);
         }
     }).start();
   }
 
-  private void initializeSdk(Boolean setScanUdsAllow, Boolean setSkipRiskwareAdWare, int maxAppSize, String activationKey) throws SdkLicenseException {
+  private void initializeSdk() throws SdkLicenseException {
+
+
     onStatus("SDK initialization started");
     mSdkInitStatus = InitStatus.InitInProgress;
 
@@ -96,7 +100,6 @@ public class AppMonitorModule extends ReactContextBaseJavaModule implements AvSt
 
       SdkLicense license = KavSdk.getLicense();
     if (!license.isValid()) {
-      license.activate(activationKey);
       onInitializationFailed(InitStatus.NeedNewLicenseCode, "New license code is required");
       return;
     }
@@ -119,7 +122,7 @@ public class AppMonitorModule extends ReactContextBaseJavaModule implements AvSt
     }
 
     mSdkInitStatus = InitStatus.InitedSuccesfully;
-    startMonitor(setScanUdsAllow, setSkipRiskwareAdWare, maxAppSize);
+    startMonitor();
   }
 
 
@@ -135,24 +138,56 @@ public class AppMonitorModule extends ReactContextBaseJavaModule implements AvSt
     onStatus("SDK initialization failed, status=" + mSdkInitStatus + ", reason=" + mReport);
   }
 
-  private void startMonitor(Boolean setScanUdsAllow, Boolean setSkipRiskwareAdWare, int maxAppSize ) {
-    onStatus("SDK initialized, AppMonitor starting");
-    sendEvent(getReactApplicationContext(), "Result",  "SDK initialized, AppMonitor starting");
-    new Thread(() -> {
-      mAppInstallationMonitor = new AppInstallationMonitor(Objects.requireNonNull(getCurrentActivity()).getApplicationContext());
-      mAppInstallationMonitor.setScanUdsAllow(setScanUdsAllow);
-      mAppInstallationMonitor.setSkipRiskwareAdware(setSkipRiskwareAdWare);
-      mAppInstallationMonitor.setMaxAppSize(maxAppSize);
-      mAppInstallationMonitor.enable(this, this);
-      onStatus("AppMonitor started");
-      sendEvent(getReactApplicationContext(), "Result",  "AppMonitor started");
-    }).start();
+  @NonNull
+  public boolean onVirusDetected(ThreatInfo threatInfo, ThreatType threatType) {
+    String msg = "Found Malware: " + threatInfo.getFileFullPath() +
+            " : " + threatInfo.getVirusName();
+    if (mExtListener != null) {
+      mExtListener.onEvent(TAG, msg);
+    }
+    Log.e(TAG, msg);
+    // Remove the infected application
+    AntivirusInstance.getInstance().removeThreat(threatInfo);
+    // stop further scanning of this package
+    return true;
   }
 
-  @Override
-  public void onCreate() {
-
+  @NonNull
+  public void onSuspiciousDetected(ThreatInfo threatInfo, SuspiciousThreatType threatType) {
+    String msg = "Found Suspicious: " + threatInfo.getFileFullPath() +
+            " : " + threatInfo.getVirusName();
+    Log.e(TAG, msg);
   }
+
+  private void startMonitor() {
+    Updater updater = Updater.getInstance();
+    try {
+      updater.updateAntivirusBases((i, i1) -> false);
+    } catch (SdkLicenseViolationException e) {
+      throw new RuntimeException(e);
+    }
+    AppInstallationMonitor monitor = new AppInstallationMonitor(getCurrentActivity().getApplicationContext());
+    monitor.setSkipRiskwareAdware(false);
+    monitor.enable((threatInfo, threatType) -> {
+      String msg = "Found Malware: " + threatInfo.getFileFullPath() +
+              " : " + threatInfo.getVirusName();
+      if (mExtListener != null) {
+        mExtListener.onEvent(TAG, msg);
+      }
+
+      Log.e(TAG, msg);
+      // Remove the infected application
+      AntivirusInstance.getInstance().removeThreat(threatInfo);
+      // stop further scanning of this package
+      return true;
+    }, (threatInfo, threatType) -> {
+      String msg = "Found Suspicious: " + threatInfo.getFileFullPath() +
+              " : " + threatInfo.getVirusName();
+      Log.e(TAG, msg);
+    });
+    Log.e(TAG, "App Monitor Enabled");
+  }
+
 
   @Override
   public void onStatus(String report) {
@@ -174,17 +209,6 @@ public class AppMonitorModule extends ReactContextBaseJavaModule implements AvSt
     if (listener != null) {
       listener.onInfected(report);
     }
-  }
-
-  @Override
-  public boolean onVirusDetected(@NonNull ThreatInfo threatInfo, @NonNull ThreatType threatType) {
-    onInfected("Infected " + threatInfo + ", " + threatType);
-    return true;
-  }
-
-  @Override
-  public void onSuspiciousDetected(ThreatInfo threatInfo, SuspiciousThreatType threatType) {
-    onInfected("Suspicious " + threatInfo + ", " + threatType);
   }
 
   private enum InitStatus {

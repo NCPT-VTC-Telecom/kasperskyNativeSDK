@@ -83,7 +83,7 @@ class WebFilterModule extends ReactContextBaseJavaModule implements SdkInitListe
         new Thread(() -> initializeSdk(context, WebFilterModule.this)).start();
     }
 
-    /** Check for product keys, listener, */
+    /** Check for product keys, listener, event for the SDK */
     private void initializeSdk(Context context, SdkInitListener listener)
     {
         final File basesPath = getCurrentActivity().getDir("bases", Context.MODE_PRIVATE);

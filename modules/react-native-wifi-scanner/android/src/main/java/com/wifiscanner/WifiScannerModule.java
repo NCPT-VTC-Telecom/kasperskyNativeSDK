@@ -1,6 +1,7 @@
 package com.wifiscanner;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 
@@ -96,6 +97,19 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
     }).start();
   }
 
+  @ReactMethod
+  public void updateDatabase () {
+    Updater updater = Updater.getInstance();
+    Context reactContext = getReactApplicationContext();
+    try {
+      sendEvent((ReactContext) reactContext, "updateDatabase", "Đang cập nhật Database");
+      updater.updateAntivirusBases((i, i1) -> false);
+      Log.i("TAG", "WIFI_SCANNER_STARTED");
+    } catch (SdkLicenseViolationException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 
 
   @ReactMethod
@@ -107,7 +121,7 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
 
     try {
       KavSdk.initSafe(context, basesPath, generalStorage, getNativeLibsPath());
-
+      updateDatabase();
       final SdkLicense license = KavSdk.getLicense();
       if (!license.isValid()) {
         if (!license.isClientUserIDRequired()) {
@@ -160,25 +174,19 @@ public class WifiScannerModule extends ReactContextBaseJavaModule implements Sdk
 
 
   @ReactMethod
+  @SuppressLint("MissingPermission")
     public boolean onSdkInitialized () {
       boolean isNetworkSafe = false;
       Context context = getCurrentActivity().getApplicationContext();
       ReactContext reactContext = getReactApplicationContext();
-      Updater updater = Updater.getInstance(); //
-      try {
-        sendEvent(reactContext, "updateDatabase", "Đang cập nhật Database");
-        updater.updateAntivirusBases((i, i1) -> false);
-        Log.i("TAG", "WIFI_SCANNER_STARTED");
-      } catch (SdkLicenseViolationException e) {
-        throw new RuntimeException(e);
-      }
       WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
       WifiInfo wi = wifiManager.getConnectionInfo();
 
         try {
+
           final WifiReputation wifiReputation = new WifiReputation(context);
           WifiCheckResult wifiCheckResult = wifiReputation.checkCurrentNetwork();
-          Log.i(TAG, "Wifi Safe Status: " + wifiReputation.isCurrentNetworkSafe() + " " + wifiCheckResult.getBssid());
+//        Log.i(TAG, "Wifi Safe Status: " + wifiReputation.isCurrentNetworkSafe() + " " + wifiCheckResult.getBssid());
           Log.i(TAG, "KSN Wifi check result: " + wifiCheckResult.getVerdict().name());
           isNetworkSafe = wifiReputation.isCurrentNetworkSafe();
           Log.d(TAG, "Is network safe:" + isNetworkSafe);

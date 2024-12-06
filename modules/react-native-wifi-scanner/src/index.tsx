@@ -1,13 +1,8 @@
-import {
-  DeviceEventEmitter,
-  EmitterSubscription,
-  NativeModules,
-  Platform,
-} from 'react-native';
+import { DeviceEventEmitter, EmitterSubscription, NativeModules, Platform } from 'react-native';
 
 const LINKING_ERROR =
   `The package 'react-native-wifi-scanner' doesn't seem to be linked. Make sure: \n\n` +
-  Platform.select({ios: "- You have run 'pod install'\n", default: ''}) +
+  Platform.select({ ios: "- You have run 'pod install'\n", default: '' }) +
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n';
 
@@ -23,7 +18,7 @@ const WifiScanner = NativeModules.WifiScanner
     );
 
 export const iniitializeSdk = (): Promise<any> => {
-  const {KasperskyWifiScanner} = NativeModules;
+  const { KasperskyWifiScanner } = NativeModules;
   return new Promise((resolve, reject) => {
     let result: EmitterSubscription;
     result = DeviceEventEmitter.addListener('Status', data => {
@@ -40,7 +35,7 @@ export const iniitializeSdk = (): Promise<any> => {
 };
 
 export const wifiScanning = (): Promise<any> => {
-  const {KasperskyWifiScanner} = NativeModules;
+  const { KasperskyWifiScanner } = NativeModules;
   return new Promise((resolve, reject) => {
     let result: EmitterSubscription;
     result = DeviceEventEmitter.addListener('Status', data => {
@@ -49,7 +44,7 @@ export const wifiScanning = (): Promise<any> => {
     });
 
     try {
-      KasperskyWifiScanner.onSdkInitialized();
+      KasperskyWifiScanner.onWifiReputation();
     } catch (error) {
       reject(error);
     }

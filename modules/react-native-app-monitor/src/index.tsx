@@ -1,9 +1,4 @@
-import {
-  DeviceEventEmitter,
-  EmitterSubscription,
-  NativeModules,
-  Platform,
-} from 'react-native';
+import { DeviceEventEmitter, EmitterSubscription, NativeModules, Platform } from 'react-native';
 
 const LINKING_ERROR =
   `The package 'react-native-app-monitor' doesn't seem to be linked. Make sure: \n\n` +
@@ -11,17 +6,7 @@ const LINKING_ERROR =
   '- You rebuilt the app after installing the package\n' +
   '- You are not using Expo Go\n';
 
-interface MonitorType {
-  setScanUdsAllow?: boolean | true;
-  setSkipRiskwareAdWare?: boolean | false;
-  maxAppSize?: number | 1024;
-}
-
-const kasperskyAppMonitor = ({
-  setScanUdsAllow,
-  setSkipRiskwareAdWare,
-  maxAppSize,
-}: MonitorType): Promise<any> => {
+const kasperskyAppMonitor = (): Promise<any> => {
   const { AppMonitorSDK } = NativeModules;
 
   return new Promise((resolve, reject) => {
@@ -32,12 +17,7 @@ const kasperskyAppMonitor = ({
     });
 
     try {
-      AppMonitorSDK.onCreate(
-        setScanUdsAllow,
-        setSkipRiskwareAdWare,
-        maxAppSize,
-        DEFAULT_KEY,
-      );
+      AppMonitorSDK.onCreate();
     } catch (error) {
       console.log(error);
       reject(error);
@@ -45,5 +25,5 @@ const kasperskyAppMonitor = ({
   });
 };
 /** Set the PRODUCT KEY for first Initalize the API */
-const DEFAULT_KEY = 'JKBSB-WMEQD-KY8MG-1CGGW';
+// const DEFAULT_KEY = 'JKBSB-WMEQD-KY8MG-1CGGW';
 export default kasperskyAppMonitor;

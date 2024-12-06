@@ -1,5 +1,7 @@
 package com.kaveasyscanner;
 
+import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.provider.Settings.System.getString;
 
@@ -19,10 +21,12 @@ import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.easyscanner.SdkInitListener;
 import com.easyscanner.AvCompletedListener;
@@ -58,7 +62,8 @@ import java.util.List;
 
 
 public class ScannerModule extends ReactContextBaseJavaModule implements SdkInitListener {
-
+    private static final int REQUEST_CODE_MANAGE_STORAGE = 1001 ;
+    private TextView tv;
     private static final String TAG = "EASY_SCANNER_EXAMPLE";
     // Create thread for processing
     private Thread scannerThread;
@@ -74,8 +79,8 @@ public class ScannerModule extends ReactContextBaseJavaModule implements SdkInit
     /** Update permission code */
     private static final int ALL_FILES_PERMISSION_REQ_CODE = 4;
     private static final String[] PERMISSIONS_STORAGE = {
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE
+            READ_EXTERNAL_STORAGE,
+            WRITE_EXTERNAL_STORAGE
     };
 
     ScannerModule(ReactApplicationContext context) {
@@ -202,37 +207,20 @@ public class ScannerModule extends ReactContextBaseJavaModule implements SdkInit
 
     @ReactMethod
     public void getPermissionClick() {
-        Context context = getCurrentActivity().getApplicationContext();
         hasAccessToAllFiles = getFileAccessStatus();
-        if (!hasAccessToAllFiles && SDK_INT == 29) {
-            Log.i(TAG, "Requesting RW to Storage. API 29");
-            ActivityCompat.requestPermissions(
-                    (Activity) context,
-                    PERMISSIONS_STORAGE,
-                    ALL_FILES_PERMISSION_REQ_CODE
-
-            );
-        }
-
-        if (!hasAccessToAllFiles && SDK_INT >= Build.VERSION_CODES.R) {
-            Log.i(TAG, "Requesting Manage All Storage. API 30+");
-            requestAllFilesAccessPermission();
-        }
-
-        if (hasAccessToAllFiles) {
-//            appendLogln("", getString(R.string.all_files_access_status) + hasAccessToAllFiles);
+        if (!Environment.isExternalStorageManager()) {
+            // Request permission to access all files
+            Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            startActivityForResult(intent, REQUEST_CODE_MANAGE_STORAGE); // Use the constant here
         }
     }
 
-    public void requestAllFilesAccessPermission() {
-        try {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:" + getCurrentActivity().getPackageName()));
-            startActivityForResult(intent, ALL_FILES_PERMISSION_REQ_CODE);
-            System.out.println("Request Access file permission");
-        } catch (ActivityNotFoundException ignore) {
-
-        }
+    private String getString(int allFilesAccessStatus) {
+        return "ALL_FILE_ACCESS_STATUS";
     }
+
+
+
 
     private void startActivityForResult(Intent intent, int allFilesPermissionReqCode) {
     }
@@ -369,18 +357,11 @@ public class ScannerModule extends ReactContextBaseJavaModule implements SdkInit
     }
 
     private boolean getFileAccessStatus() {
-        boolean hasAccess = true;
-        if (SDK_INT >= 30) {
-            hasAccess = Environment.isExternalStorageManager();
-        }
+        int result = ContextCompat.checkSelfPermission(getCurrentActivity().getApplicationContext(), READ_EXTERNAL_STORAGE);
+        int result1 = ContextCompat.checkSelfPermission(getCurrentActivity().getApplicationContext(), WRITE_EXTERNAL_STORAGE);
+        Log.d(TAG, String.valueOf(result == PackageManager.PERMISSION_GRANTED && result1 == PackageManager.PERMISSION_GRANTED));
+        return result == PackageManager.PERMISSION_GRANTED && result1 == PackageManager.PERMISSION_GRANTED;
 
-        if (SDK_INT == 29) {
-            int permission = ActivityCompat.checkSelfPermission(getCurrentActivity().getApplicationContext(),
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            hasAccess = (permission == PackageManager.PERMISSION_GRANTED);
-        }
-
-        return hasAccess;
     }
 
 }
