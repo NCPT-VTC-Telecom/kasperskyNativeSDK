@@ -36,7 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
-public class AppMonitorModule extends ReactContextBaseJavaModule implements AvStatusListener, AppInstallationMonitorListener, AppInstallationMonitorSuspiciousListener {
+public class AppMonitorModule extends ReactContextBaseJavaModule implements AvStatusListener {
 
 
   @NonNull
@@ -136,27 +136,6 @@ public class AppMonitorModule extends ReactContextBaseJavaModule implements AvSt
 
   private void notifyFailed() {
     onStatus("SDK initialization failed, status=" + mSdkInitStatus + ", reason=" + mReport);
-  }
-
-  @NonNull
-  public boolean onVirusDetected(ThreatInfo threatInfo, ThreatType threatType) {
-    String msg = "Found Malware: " + threatInfo.getFileFullPath() +
-            " : " + threatInfo.getVirusName();
-    if (mExtListener != null) {
-      mExtListener.onEvent(TAG, msg);
-    }
-    Log.e(TAG, msg);
-    // Remove the infected application
-    AntivirusInstance.getInstance().removeThreat(threatInfo);
-    // stop further scanning of this package
-    return true;
-  }
-
-  @NonNull
-  public void onSuspiciousDetected(ThreatInfo threatInfo, SuspiciousThreatType threatType) {
-    String msg = "Found Suspicious: " + threatInfo.getFileFullPath() +
-            " : " + threatInfo.getVirusName();
-    Log.e(TAG, msg);
   }
 
   private void startMonitor() {
